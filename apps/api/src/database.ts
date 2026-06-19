@@ -91,8 +91,12 @@ export function loadDatabase(): WasteDatabase {
 }
 
 export function saveDatabase(db: WasteDatabase) {
-  mkdirSync(dirname(dataPath), { recursive: true });
-  writeFileSync(dataPath, JSON.stringify(db, null, 2));
+  try {
+    mkdirSync(dirname(dataPath), { recursive: true });
+    writeFileSync(dataPath, JSON.stringify(db, null, 2));
+  } catch (error) {
+    console.error("Database save failed (expected in read-only environments like Vercel):", error);
+  }
 }
 
 export function audit(db: WasteDatabase, actor: string, action: string, details: string) {

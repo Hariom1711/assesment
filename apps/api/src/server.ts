@@ -202,3 +202,4 @@ app.post("/api/v1/sms/inbound", (req, res) => {
 
 
 app.listen(port, () => console.log(`Waste API listening on http://localhost:${port}/api/v1`));
+export default app;
