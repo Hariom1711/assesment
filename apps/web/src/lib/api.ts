@@ -9,10 +9,20 @@ export interface DashboardData {
 export const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    ...(init?.headers as Record<string, string> ?? {})
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  } else {
+    headers["x-role"] = "super_admin";
+  }
   const response = await fetch(`${apiBase}${path}`, {
     cache: "no-store",
     ...init,
-    headers: { "content-type": "application/json", "x-role": "super_admin", ...(init?.headers ?? {}) }
+    headers
   });
   if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
   return response.json() as Promise<T>;

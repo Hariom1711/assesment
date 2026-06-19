@@ -1,9 +1,23 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, pbkdf2Sync } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { Collector, Country, Customer, Payment, Pickup, PlatformSettings, SackType, ServiceBooking, ServiceCategory, ServiceProvider, SmsTemplate, SmsWorkflowEvent } from "@waste/shared";
 
+export interface User {
+  id: string;
+  email: string;
+  passwordHash: string;
+  name: string;
+  role: "super_admin" | "operations_admin" | "collector" | "customer";
+  countryId: string;
+}
+
+export function hashPassword(password: string): string {
+  return pbkdf2Sync(password, "wasteops-salt-xyz-48291", 1000, 64, "sha512").toString("hex");
+}
+
 export interface WasteDatabase {
+  users: User[];
   countries: Country[];
   sacks: SackType[];
   collectors: Collector[];
@@ -35,7 +49,14 @@ export function createSeedDatabase(): WasteDatabase {
     { id: "col-2", countryId: ghana.id, name: "Akosua Darko", phone: "+233551000002", vehicleType: "Mini Truck", status: "pending_approval", availability: "offline", rating: 0, earnings: 0, activeJobs: 0, completedJobs: 0, latitude: 5.6037, longitude: -0.1870 },
     { id: "col-3", countryId: nigeria.id, name: "Chinedu Obi", phone: "+234901000001", vehicleType: "Van", status: "approved", availability: "online", rating: 4.6, earnings: 220000, activeJobs: 2, completedJobs: 104, latitude: 6.4698, longitude: 3.5852 }
   ];
+  const users: User[] = [
+    { id: "usr-1", email: "admin@wasteops.com", passwordHash: hashPassword("Password123"), name: "Yaw Mensah", role: "super_admin", countryId: ghana.id },
+    { id: "usr-2", email: "ops@wasteops.com", passwordHash: hashPassword("Password123"), name: "Ama Mensah", role: "operations_admin", countryId: ghana.id },
+    { id: "usr-3", email: "collector@wasteops.com", passwordHash: hashPassword("Password123"), name: "Yaw Boateng", role: "collector", countryId: ghana.id },
+    { id: "usr-4", email: "customer@wasteops.com", passwordHash: hashPassword("Password123"), name: "Kojo Appiah", role: "customer", countryId: ghana.id }
+  ];
   return {
+    users,
     countries: [ghana, nigeria, civ],
     sacks: [
       { id: "sack-gh-small", countryId: ghana.id, name: "Small", price: 10, stockReceived: 2000, stockSold: 840 },

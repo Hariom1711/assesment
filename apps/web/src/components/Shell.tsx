@@ -23,9 +23,11 @@ import {
   User,
   Settings,
   Sun,
-  Moon
+  Moon,
+  LogOut
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { apiBase } from "../lib/api";
 
 // Navigation divided into logical groups
 const navGroups = [
@@ -153,18 +155,265 @@ export function ToastContainer() {
   );
 }
 
+const roleNames: Record<string, string> = {
+  super_admin: "Super Admin",
+  operations_admin: "Operations Admin",
+  collector: "Collector",
+  customer: "Customer"
+};
+
 export function Shell({ children, active }: { children: React.ReactNode; active: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   
+  const [user, setUser] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
   useEffect(() => {
+    // Intercept window.fetch to automatically append Authorization header if token exists
+    const originalFetch = window.fetch;
+    window.fetch = async function (input, init) {
+      let url = "";
+      if (typeof input === "string") {
+        url = input;
+      } else if (input instanceof URL) {
+        url = input.toString();
+      } else if (input && typeof input === "object" && "url" in input) {
+        url = (input as any).url;
+      }
+
+      if (url.startsWith(apiBase)) {
+        const token = localStorage.getItem("token");
+        if (token) {
+          init = init || {};
+          const headers = new Headers(init.headers || {});
+          if (!headers.has("Authorization")) {
+            headers.set("Authorization", `Bearer ${token}`);
+          }
+          init.headers = headers;
+        }
+      }
+      return originalFetch.call(this, input, init);
+    };
+
+    // Load theme
     const saved = localStorage.getItem("theme");
     if (saved === "light") {
       document.body.classList.add("light");
     } else {
       document.body.classList.remove("light");
     }
-  }, []);
-  
+
+    // Verify session
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+
+    if (!token || !userStr) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const parts = token.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        if (payload.exp && Date.now() / 1000 > payload.exp) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          toast.error("Session expired. Please log in again.");
+          router.push("/login");
+          return;
+        }
+        
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+        setLoadingUser(false);
+
+        // Access guard for /super-admin
+        if (pathname.startsWith("/super-admin") && userData.role !== "super_admin") {
+          toast.error("Access denied. You do not have super admin permissions.");
+          router.push("/");
+        }
+      } else {
+        throw new Error("Invalid session token format.");
+      }
+    } catch (e) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.push("/login");
+    }
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [pathname, router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    toast.success("Successfully logged out. Secure session terminated.");
+    router.push("/login");
+  };
+
+  // Filter navigation by role
+  const filteredNavGroups = navGroups.map((group) => {
+    if (group.title === "Administration") {
+      return {
+        ...group,
+        items: group.items.filter((item) => {
+          if (item.href === "/super-admin") {
+            return user?.role === "super_admin";
+          }
+          return true;
+        })
+      };
+    }
+    return group;
+  }).filter((group) => group.items.length > 0);
+
+  if (loadingUser) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        background: "var(--bg)",
+        color: "var(--text-muted)",
+        fontFamily: "inherit"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            display: "inline-grid",
+            placeItems: "center",
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: "linear-gradient(135deg, var(--primary), var(--accent))",
+            color: "white",
+            marginBottom: 16,
+            boxShadow: "0 8px 16px rgba(16, 185, 129, 0.15)"
+          }}>
+            <Globe2 size={24} className="animate-spin-slow" />
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Authenticating Session...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render Access Denied layout for unauthorized platform settings access
+  if (pathname.startsWith("/super-admin") && user && user.role !== "super_admin") {
+    return (
+      <div className="shell">
+        <aside className="sidebar">
+          <div className="brand">
+            <span className="brand-mark">
+              <Globe2 size={22} className="animate-spin-slow" />
+            </span>
+            <div>
+              <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em" }}>WasteOps</span>
+              <span style={{ display: "block", fontSize: 11, color: "var(--text-muted)", fontWeight: 500 }}>Multi-Country Platform</span>
+            </div>
+          </div>
+          <nav className="nav" style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
+            {filteredNavGroups.map((group) => (
+              <div key={group.title} style={{ marginBottom: 20 }}>
+                <div style={{ 
+                  fontSize: 10, 
+                  textTransform: "uppercase", 
+                  letterSpacing: "0.1em", 
+                  fontWeight: 700, 
+                  color: "rgba(255,255,255,0.25)",
+                  paddingLeft: 16,
+                  marginBottom: 8
+                }}>
+                  {group.title}
+                </div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                    return (
+                      <Link 
+                        key={item.href} 
+                        className={isActive ? "active" : ""} 
+                        href={item.href}
+                      >
+                        <Icon size={18} />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
+          <div style={{ 
+            borderTop: "1px solid var(--line)", 
+            paddingTop: 16, 
+            marginTop: 16,
+            display: "flex", 
+            alignItems: "center", 
+            gap: 12 
+          }}>
+            <div style={{ 
+              width: 38, 
+              height: 38, 
+              borderRadius: "50%", 
+              background: "rgba(255, 255, 255, 0.05)",
+              border: "1px solid var(--line)",
+              display: "grid",
+              placeItems: "center",
+              color: "var(--primary)"
+            }}>
+              <User size={18} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {user?.name || "Loading..."}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                {roleNames[user?.role] || user?.role || "Admin"}
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              title="Log Out of Session"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "10px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid var(--line)",
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+                color: "var(--accent)",
+                transition: "var(--transition)"
+              }}
+              className="hover:scale-105 active:scale-95 hover:bg-[rgba(255,255,255,0.06)]"
+            >
+              <LogOut size={14} />
+            </button>
+          </div>
+        </aside>
+        <main className="main" style={{ display: "grid", placeItems: "center", padding: 40 }}>
+          <div className="card" style={{ maxWidth: 500, textAlign: "center", padding: "40px 24px", border: "1px solid var(--line)" }}>
+            <Shield size={48} style={{ color: "var(--accent)", marginBottom: 16 }} />
+            <h2 style={{ fontSize: 22, fontWeight: 800 }}>Access Denied</h2>
+            <p style={{ color: "var(--text-muted)", margin: "12px 0 24px 0" }}>
+              You do not have the required administrative permissions to access the platform settings.
+            </p>
+            <Link href="/" className="btn">
+              Return to Dashboard
+            </Link>
+          </div>
+        </main>
+        <ToastContainer />
+      </div>
+    );
+  }
+
   return (
     <div className="shell">
       <aside className="sidebar">
@@ -179,7 +428,7 @@ export function Shell({ children, active }: { children: React.ReactNode; active:
         </div>
         
         <nav className="nav" style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
-          {navGroups.map((group) => (
+          {filteredNavGroups.map((group) => (
             <div key={group.title} style={{ marginBottom: 20 }}>
               <div style={{ 
                 fontSize: 10, 
@@ -234,12 +483,31 @@ export function Shell({ children, active }: { children: React.ReactNode; active:
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-main)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              Yaw Mensah
+              {user?.name || "Loading..."}
             </div>
             <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              Operations Admin
+              {roleNames[user?.role] || user?.role || "Admin"}
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Log Out of Session"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: "10px",
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid var(--line)",
+              display: "grid",
+              placeItems: "center",
+              cursor: "pointer",
+              color: "var(--accent)",
+              transition: "var(--transition)"
+            }}
+            className="hover:scale-105 active:scale-95 hover:bg-[rgba(255,255,255,0.06)]"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </aside>
       <main className="main">{children}</main>
