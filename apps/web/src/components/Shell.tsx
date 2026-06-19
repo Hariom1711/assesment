@@ -21,7 +21,9 @@ import {
   Sparkles,
   ChevronDown,
   User,
-  Settings
+  Settings,
+  Sun,
+  Moon
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -71,6 +73,15 @@ const navGroups = [
 
 export function Shell({ children, active }: { children: React.ReactNode; active: string }) {
   const pathname = usePathname();
+  
+  useEffect(() => {
+    const saved = localStorage.getItem("theme");
+    if (saved === "light") {
+      document.body.classList.add("light");
+    } else {
+      document.body.classList.remove("light");
+    }
+  }, []);
   
   return (
     <div className="shell">
@@ -154,6 +165,49 @@ export function Shell({ children, active }: { children: React.ReactNode; active:
   );
 }
 
+export function ThemeToggle() {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    // Detect theme on mount
+    const isLight = document.body.classList.contains("light");
+    setTheme(isLight ? "light" : "dark");
+  }, []);
+
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem("theme", next);
+    if (next === "light") {
+      document.body.classList.add("light");
+    } else {
+      document.body.classList.remove("light");
+    }
+  };
+
+  return (
+    <button 
+      onClick={toggle}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: "14px",
+        background: "rgba(255, 255, 255, 0.03)",
+        border: "1px solid var(--line)",
+        display: "grid",
+        placeItems: "center",
+        cursor: "pointer",
+        color: "var(--text-main)",
+        transition: "var(--transition)"
+      }}
+      className="hover:scale-105 active:scale-95 hover:bg-[rgba(255,255,255,0.06)]"
+    >
+      {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+    </button>
+  );
+}
+
 export function Topbar({ title, subtitle, children }: { title: string; subtitle: string; children?: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -196,6 +250,7 @@ export function Topbar({ title, subtitle, children }: { title: string; subtitle:
             <option value="country-ci">🇨🇮 Côte d'Ivoire (XOF)</option>
           </select>
         </div>
+        <ThemeToggle />
         {children}
       </div>
     </div>

@@ -24,6 +24,26 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+body.light {
+  color-scheme: light;
+  --bg: #fcf8ff;
+  --bg-sidebar: rgba(255, 255, 255, 0.7);
+  --bg-card: rgba(255, 255, 255, 0.6);
+  --bg-card-hover: rgba(255, 255, 255, 0.85);
+  --line: rgba(79, 70, 229, 0.12);
+  --line-focus: rgba(79, 70, 229, 0.4);
+  --text-main: #1b1b24;
+  --text-muted: #464555;
+  --primary: #4f46e5;
+  --primary-hover: #3525cd;
+  --primary-glow: rgba(79, 70, 229, 0.15);
+  --accent: #0ea5e9;
+  --accent-glow: rgba(14, 165, 233, 0.15);
+  --danger: #ba1a1a;
+  --warning: #ffb800;
+  --success: #22c55e;
+}
+
 * {
   box-sizing: border-box;
   scrollbar-width: thin;
@@ -41,6 +61,15 @@ body {
     radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
   background-attachment: fixed;
+}
+
+body.light {
+  background-image: 
+    radial-gradient(at 0% 0%, #eff6ff 0px, transparent 50%),
+    radial-gradient(at 100% 0%, #fcf8ff 0px, transparent 50%),
+    radial-gradient(at 50% 50%, #f5f2ff 0px, transparent 50%),
+    radial-gradient(at 100% 100%, #eff6ff 0px, transparent 50%);
+  scrollbar-color: rgba(79, 70, 229, 0.15) transparent;
 }
 
 button, input, select, textarea {
@@ -876,5 +905,123 @@ label {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+/* Luminous Glass Light Theme Component Overrides */
+body.light .card {
+  box-shadow: 0 8px 32px 0 rgba(79, 70, 229, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+body.light .card:hover {
+  border-color: rgba(79, 70, 229, 0.15);
+  background: var(--bg-card-hover);
+}
+
+body.light .sidebar {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(79, 70, 229, 0.08);
+}
+
+body.light .nav a:hover {
+  background: rgba(79, 70, 229, 0.06);
+  color: var(--primary);
+}
+
+body.light .nav a.active {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+  border-color: rgba(79, 70, 229, 0.15);
+  box-shadow: inset 0 0 12px rgba(79, 70, 229, 0.03);
+}
+
+body.light .title h1 {
+  background: linear-gradient(to right, #1b1b24, #464555);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light ::-webkit-scrollbar-thumb {
+  background: rgba(79, 70, 229, 0.15);
+}
+
+body.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 70, 229, 0.3);
+}
+
+body.light tr:hover td {
+  background: rgba(79, 70, 229, 0.03);
+  color: var(--text-main);
+}
+
+body.light td {
+  color: #334155; /* Slate-700 for better readability on light glass */
+}
+
+body.light th {
+  color: #475569; /* Slate-600 for table headers */
+}
+
+body.light input, body.light select, body.light textarea {
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba(79, 70, 229, 0.18);
+  color: var(--text-main);
+}
+
+body.light input:focus, body.light select:focus, body.light textarea:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+body.light .badge {
+  background: rgba(79, 70, 229, 0.1);
+  color: #312e81; /* Indigo-900 */
+  border: 1px solid rgba(79, 70, 229, 0.15);
+}
+
+body.light .badge.green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #14532d; /* Green-900 */
+  border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+body.light .badge.yellow {
+  background: rgba(234, 179, 8, 0.12);
+  color: #713f12; /* Yellow-900 */
+  border: 1px solid rgba(234, 179, 8, 0.15);
+}
+
+body.light .badge.red {
+  background: rgba(239, 68, 68, 0.12);
+  color: #7f1d1d; /* Red-900 */
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+body.light .modal-content {
+  background: #fbf9ff;
+  border-color: rgba(79, 70, 229, 0.15);
+  box-shadow: 0 20px 50px rgba(79, 70, 229, 0.12);
+}
+
+body.light .tab.active {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--primary);
+}
+
+body.light .sms-event-card {
+  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(79, 70, 229, 0.1);
+}
+
+body.light .sms-event-body {
+  background: rgba(79, 70, 229, 0.04);
+  color: #1e1b4b;
+}
+
+body.light .map-container {
+  background: radial-gradient(circle at center, #f5f3ff 0%, #ede9fe 100%);
+  border-color: rgba(79, 70, 229, 0.15);
 }
 
