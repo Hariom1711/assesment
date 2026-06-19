@@ -71,6 +71,88 @@ const navGroups = [
   }
 ];
 
+export type ToastType = "success" | "error" | "info" | "warning";
+
+export interface ToastMessage {
+  id: string;
+  type: ToastType;
+  message: string;
+}
+
+type ToastCallback = (toast: ToastMessage) => void;
+let toastListeners: Set<ToastCallback> = new Set();
+
+export const toast = {
+  success: (message: string) => notify("success", message),
+  error: (message: string) => notify("error", message),
+  info: (message: string) => notify("info", message),
+  warning: (message: string) => notify("warning", message),
+};
+
+function notify(type: ToastType, message: string) {
+  const newToast: ToastMessage = {
+    id: Math.random().toString(36).substring(2, 9),
+    type,
+    message,
+  };
+  toastListeners.forEach((listener) => listener(newToast));
+}
+
+function subscribeToToasts(listener: ToastCallback) {
+  toastListeners.add(listener);
+  return () => {
+    toastListeners.delete(listener);
+  };
+}
+
+export function ToastContainer() {
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  useEffect(() => {
+    return subscribeToToasts((newToast) => {
+      setToasts((prev) => [...prev, newToast]);
+      // Auto dismiss after 4 seconds
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((t) => t.id !== newToast.id));
+      }, 4000);
+    });
+  }, []);
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  return (
+    <div className="toast-container">
+      {toasts.map((t) => (
+        <div 
+          key={t.id} 
+          className={`toast toast-${t.type}`}
+          onClick={() => removeToast(t.id)}
+          style={{ cursor: "pointer" }}
+        >
+          <span style={{ flex: 1 }}>{t.message}</span>
+          <button 
+            onClick={(e) => { e.stopPropagation(); removeToast(t.id); }}
+            style={{ 
+              background: "transparent", 
+              border: 0, 
+              color: "inherit", 
+              opacity: 0.6, 
+              cursor: "pointer", 
+              fontSize: 14,
+              fontWeight: 700,
+              paddingLeft: 8
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Shell({ children, active }: { children: React.ReactNode; active: string }) {
   const pathname = usePathname();
   
@@ -161,6 +243,7 @@ export function Shell({ children, active }: { children: React.ReactNode; active:
         </div>
       </aside>
       <main className="main">{children}</main>
+      <ToastContainer />
     </div>
   );
 }

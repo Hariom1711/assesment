@@ -16,8 +16,8 @@ import {
   Sparkles,
   Bug
 } from "lucide-react";
-import { Shell, Topbar } from "../../src/components/Shell";
-import { StatusBadge } from "../../src/components/Ui";
+import { Shell, Topbar, toast } from "../../src/components/Shell";
+import { StatusBadge, Skeleton } from "../../src/components/Ui";
 import { getPickups, getServiceBookings, apiBase } from "../../src/lib/api";
 import type { Pickup, ServiceBooking } from "@waste/shared";
 
@@ -139,9 +139,12 @@ export default function GalleryPage() {
       if (response.ok) {
         setSelectedPhoto(null);
         setRefreshKey(prev => prev + 1);
+        toast.success(`Verification status successfully updated to ${status}!`);
+      } else {
+        toast.error("Failed to update verification status.");
       }
-    } catch (err) {
-      alert("Failed to update verification status.");
+    } catch (err: any) {
+      toast.error(`Verification update failed: ${err.message || err}`);
     } finally {
       setSubmitting(false);
     }
@@ -182,7 +185,23 @@ export default function GalleryPage() {
 
       {/* Grid */}
       <div className="proof-grid">
-        {filteredItems.length > 0 ? (
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="card animate-pulse" style={{ display: "flex", flexDirection: "column", gap: 12, padding: 0 }}>
+              <Skeleton style={{ height: 140, width: "100%", borderRadius: "16px 16px 0 0" }} />
+              <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                <Skeleton style={{ height: 14, width: "60%" }} />
+                <Skeleton style={{ height: 10, width: "80%" }} />
+                <Skeleton style={{ height: 10, width: "40%" }} />
+                <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                  <Skeleton style={{ height: 28, flex: 1, borderRadius: 8 }} />
+                  <Skeleton style={{ height: 28, width: 28, borderRadius: 8 }} />
+                  <Skeleton style={{ height: 28, width: 28, borderRadius: 8 }} />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : filteredItems.length > 0 ? (
           filteredItems.map((item) => (
             <div key={item.id} className="proof-card" style={{ border: item.status === "flagged" ? "1px solid rgba(244,63,94,0.3)" : "1px solid var(--line)" }}>
               

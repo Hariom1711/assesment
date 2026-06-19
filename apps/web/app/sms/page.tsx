@@ -17,8 +17,8 @@ import {
   AlertTriangle,
   ChevronRight
 } from "lucide-react";
-import { Shell, Topbar } from "../../src/components/Shell";
-import { StatusBadge } from "../../src/components/Ui";
+import { Shell, Topbar, toast } from "../../src/components/Shell";
+import { StatusBadge, Skeleton, SkeletonTable } from "../../src/components/Ui";
 import { getSmsEvents, getSmsTemplates, apiBase, fallbackData } from "../../src/lib/api";
 import type { SmsWorkflowEvent, SmsTemplate } from "@waste/shared";
 
@@ -115,8 +115,11 @@ export default function SmsPage() {
         };
         setChatMessages(prev => [...prev, systemMsg]);
         setRefreshKey(prev => prev + 1);
+        toast.success("SMS request dispatched and reply compiled!");
+      } else {
+        toast.error("SMS simulator received a bad gateway response.");
       }
-    } catch (err) {
+    } catch (err: any) {
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         sender: "system",
@@ -124,6 +127,7 @@ export default function SmsPage() {
         timestamp: new Date().toLocaleTimeString()
       };
       setChatMessages(prev => [...prev, errorMsg]);
+      toast.error(`SMS dispatch error: ${err.message || err}`);
     } finally {
       setSending(false);
     }
@@ -217,7 +221,19 @@ export default function SmsPage() {
               Live SMS Webhook Logs
             </h2>
             <div className="sms-events-log">
-              {events.length > 0 ? (
+              {loading ? (
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div className="sms-event-card animate-pulse" key={i} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <Skeleton style={{ height: 12, width: "40%" }} />
+                      <Skeleton style={{ height: 12, width: "20%" }} />
+                    </div>
+                    <Skeleton style={{ height: 10, width: "60%" }} />
+                    <Skeleton style={{ height: 10, width: "80%" }} />
+                    <Skeleton style={{ height: 24, width: "100%", borderRadius: 6, marginTop: 4 }} />
+                  </div>
+                ))
+              ) : events.length > 0 ? (
                 events.map((evt) => (
                   <div className="sms-event-card" key={evt.id}>
                     <div className="sms-event-header">
@@ -244,38 +260,42 @@ export default function SmsPage() {
               <FileCode size={18} style={{ color: "var(--primary)" }} />
               SMS Automation Templates
             </h2>
-            <div style={{ overflowX: "auto" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Trigger Event</th>
-                    <th>Template Body</th>
-                    <th>Countries</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {templates.length > 0 ? (
-                    templates.map((tpl) => (
-                      <tr key={tpl.id}>
-                        <td><b>{tpl.name}</b></td>
-                        <td style={{ fontSize: 13, color: "var(--text-muted)" }}>{tpl.body}</td>
-                        <td>
-                          {tpl.countries.map(c => (
-                            <span key={c} className="badge" style={{ marginRight: 4, padding: "2px 6px" }}>{c}</span>
-                          ))}
+            {loading ? (
+              <SkeletonTable cols={3} rows={2} />
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Trigger Event</th>
+                      <th>Template Body</th>
+                      <th>Countries</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {templates.length > 0 ? (
+                      templates.map((tpl) => (
+                        <tr key={tpl.id}>
+                          <td><b>{tpl.name}</b></td>
+                          <td style={{ fontSize: 13, color: "var(--text-muted)" }}>{tpl.body}</td>
+                          <td>
+                            {tpl.countries.map(c => (
+                              <span key={c} className="badge" style={{ marginRight: 4, padding: "2px 6px" }}>{c}</span>
+                            ))}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)", padding: 12 }}>
+                          No templates configured.
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)", padding: 12 }}>
-                        No templates configured.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
         </div>

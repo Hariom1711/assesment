@@ -17,8 +17,8 @@ import {
   X,
   TrendingUp
 } from "lucide-react";
-import { Shell, Topbar } from "../src/components/Shell";
-import { StatusBadge } from "../src/components/Ui";
+import { Shell, Topbar, toast } from "../src/components/Shell";
+import { StatusBadge, SkeletonCard, SkeletonTable } from "../src/components/Ui";
 import { getCountries, getDashboard, apiBase, fallbackData } from "../src/lib/api";
 import type { Country, Collector, Pickup } from "@waste/shared";
 
@@ -111,9 +111,12 @@ export default function DashboardPage() {
         setSackCount(1);
         setIsModalOpen(false);
         setRefreshKey(prev => prev + 1);
+        toast.success("New pickup request successfully dispatched!");
+      } else {
+        toast.error("Failed to submit pickup request.");
       }
-    } catch (err) {
-      alert("Failed to submit pickup request. Please try again.");
+    } catch (err: any) {
+      toast.error(`Pickup creation failed: ${err.message || err}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -131,10 +134,13 @@ export default function DashboardPage() {
         if (selectedCollector && selectedCollector.id === colId) {
           setSelectedCollector({ ...selectedCollector, status: updated.status });
         }
+        toast.success(`Collector status successfully updated to ${status}!`);
         setRefreshKey(prev => prev + 1);
+      } else {
+        toast.error("Failed to update collector status.");
       }
-    } catch (err) {
-      console.error("Failed to approve/suspend collector:", err);
+    } catch (err: any) {
+      toast.error(`Collector update failed: ${err.message || err}`);
     }
   };
 
@@ -154,55 +160,61 @@ export default function DashboardPage() {
 
       {/* KPI Stats Panel */}
       <div className="grid kpis">
-        <div className="card kpi-card">
-          <div className="kpi-label">Total Customers</div>
-          <div className="kpi-value">
-            <Users size={24} style={{ color: "var(--accent)" }} />
-            {dashboard.kpis.totalCustomers}
-          </div>
-          <div className="kpi-subtext">Registered clients</div>
-        </div>
-        <div className="card kpi-card success-accent">
-          <div className="kpi-label">Active Collectors</div>
-          <div className="kpi-value">
-            <Truck size={24} style={{ color: "var(--primary)" }} />
-            {dashboard.kpis.totalCollectors}
-          </div>
-          <div className="kpi-subtext">Onboarding & approved</div>
-        </div>
-        <div className="card kpi-card success-accent">
-          <div className="kpi-label">Today's Pickups</div>
-          <div className="kpi-value">
-            <Clipboard size={24} style={{ color: "#14b8a6" }} />
-            {dashboard.kpis.todaysPickups}
-          </div>
-          <div className="kpi-subtext">Bookings logged today</div>
-        </div>
-        <div className="card kpi-card success-accent">
-          <div className="kpi-label">Today's Revenue</div>
-          <div className="kpi-value" style={{ color: "var(--primary)" }}>
-            <DollarSign size={24} />
-            <span style={{ fontSize: 24, marginRight: 2 }}>{activeCountry.currency}</span>
-            {dashboard.kpis.revenueToday}
-          </div>
-          <div className="kpi-subtext">Cleared Momo/Card/Cash</div>
-        </div>
-        <div className="card kpi-card warning-accent">
-          <div className="kpi-label">Pending Queue</div>
-          <div className="kpi-value" style={{ color: "var(--warning)" }}>
-            <Clock size={24} />
-            {dashboard.kpis.pendingRequests}
-          </div>
-          <div className="kpi-subtext">Needs dispatching</div>
-        </div>
-        <div className="card kpi-card warning-accent">
-          <div className="kpi-label">Active Jobs</div>
-          <div className="kpi-value" style={{ color: "var(--accent)" }}>
-            <PlayCircle size={24} />
-            {dashboard.kpis.activeJobs}
-          </div>
-          <div className="kpi-subtext">In-progress routes</div>
-        </div>
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+        ) : (
+          <>
+            <div className="card kpi-card">
+              <div className="kpi-label">Total Customers</div>
+              <div className="kpi-value">
+                <Users size={24} style={{ color: "var(--accent)" }} />
+                {dashboard.kpis.totalCustomers}
+              </div>
+              <div className="kpi-subtext">Registered clients</div>
+            </div>
+            <div className="card kpi-card success-accent">
+              <div className="kpi-label">Active Collectors</div>
+              <div className="kpi-value">
+                <Truck size={24} style={{ color: "var(--primary)" }} />
+                {dashboard.kpis.totalCollectors}
+              </div>
+              <div className="kpi-subtext">Onboarding & approved</div>
+            </div>
+            <div className="card kpi-card success-accent">
+              <div className="kpi-label">Today's Pickups</div>
+              <div className="kpi-value">
+                <Clipboard size={24} style={{ color: "#14b8a6" }} />
+                {dashboard.kpis.todaysPickups}
+              </div>
+              <div className="kpi-subtext">Bookings logged today</div>
+            </div>
+            <div className="card kpi-card success-accent">
+              <div className="kpi-label">Today's Revenue</div>
+              <div className="kpi-value" style={{ color: "var(--primary)" }}>
+                <DollarSign size={24} />
+                <span style={{ fontSize: 24, marginRight: 2 }}>{activeCountry.currency}</span>
+                {dashboard.kpis.revenueToday}
+              </div>
+              <div className="kpi-subtext">Cleared Momo/Card/Cash</div>
+            </div>
+            <div className="card kpi-card warning-accent">
+              <div className="kpi-label">Pending Queue</div>
+              <div className="kpi-value" style={{ color: "var(--warning)" }}>
+                <Clock size={24} />
+                {dashboard.kpis.pendingRequests}
+              </div>
+              <div className="kpi-subtext">Needs dispatching</div>
+            </div>
+            <div className="card kpi-card warning-accent">
+              <div className="kpi-label">Active Jobs</div>
+              <div className="kpi-value" style={{ color: "var(--accent)" }}>
+                <PlayCircle size={24} />
+                {dashboard.kpis.activeJobs}
+              </div>
+              <div className="kpi-subtext">In-progress routes</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Main Grid: Interactive Map & Requests */}
@@ -215,49 +227,53 @@ export default function DashboardPage() {
               <Clipboard size={18} style={{ color: "var(--primary)" }} />
               Live Collection Requests Queue
             </h2>
-            <div style={{ overflowX: "auto" }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Request ID</th>
-                    <th>Source</th>
-                    <th>Address</th>
-                    <th>Waste Spec</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.recentPickups && dashboard.recentPickups.length > 0 ? (
-                    dashboard.recentPickups.map((pickup: Pickup) => (
-                      <tr key={pickup.id}>
-                        <td><b>{pickup.id}</b></td>
-                        <td>
-                          <span style={{ 
-                            fontSize: 11, 
-                            fontWeight: 700, 
-                            textTransform: "uppercase",
-                            opacity: 0.8
-                          }}>
-                            {pickup.source}
-                          </span>
-                        </td>
-                        <td>{pickup.address}</td>
-                        <td style={{ color: "var(--primary)", fontWeight: 600 }}>{pickup.sackSummary}</td>
-                        <td><StatusBadge value={pickup.status} /></td>
-                        <td style={{ fontWeight: 700 }}>{activeCountry.currency} {pickup.amount}</td>
-                      </tr>
-                    ))
-                  ) : (
+            {loading ? (
+              <SkeletonTable cols={6} rows={4} />
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table>
+                  <thead>
                     <tr>
-                      <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: 24 }}>
-                        No collection requests found for this country.
-                      </td>
+                      <th>Request ID</th>
+                      <th>Source</th>
+                      <th>Address</th>
+                      <th>Waste Spec</th>
+                      <th>Status</th>
+                      <th>Amount</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {dashboard.recentPickups && dashboard.recentPickups.length > 0 ? (
+                      dashboard.recentPickups.map((pickup: Pickup) => (
+                        <tr key={pickup.id}>
+                          <td><b>{pickup.id}</b></td>
+                          <td>
+                            <span style={{ 
+                              fontSize: 11, 
+                              fontWeight: 700, 
+                              textTransform: "uppercase",
+                              opacity: 0.8
+                            }}>
+                              {pickup.source}
+                            </span>
+                          </td>
+                          <td>{pickup.address}</td>
+                          <td style={{ color: "var(--primary)", fontWeight: 600 }}>{pickup.sackSummary}</td>
+                          <td><StatusBadge value={pickup.status} /></td>
+                          <td style={{ fontWeight: 700 }}>{activeCountry.currency} {pickup.amount}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center", color: "var(--text-muted)", padding: 24 }}>
+                          No collection requests found for this country.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
@@ -272,63 +288,78 @@ export default function DashboardPage() {
               Simulating actual GPS locations of collectors in the capital district. Click on any pin to dispatch or manage.
             </p>
 
-            <div className="map-container">
-              {/* Grid overlay lines */}
-              <svg className="map-svg" viewBox="0 0 100 100">
-                <line x1="10" y1="0" x2="10" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="30" y1="0" x2="30" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="70" y1="0" x2="70" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="90" y1="0" x2="90" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="0" y1="40" x2="100" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="0" y1="60" x2="100" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                <line x1="0" y1="80" x2="100" y2="80" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
-                
-                {/* Ghana Coast outline representation */}
-                {countryId === "country-gh" && (
-                  <path d="M 5,95 Q 40,80 60,65 T 95,50" fill="none" stroke="rgba(16, 185, 129, 0.15)" strokeWidth="2" strokeDasharray="4,4" />
-                )}
-                {/* Nigeria representation */}
-                {countryId === "country-ng" && (
-                  <path d="M 10,10 Q 50,40 90,10 M 10,90 Q 50,60 90,90" fill="none" stroke="rgba(99, 102, 241, 0.15)" strokeWidth="2" />
-                )}
-              </svg>
-
-              <div className="map-pins">
-                {dashboard.collectorMap && dashboard.collectorMap.map((col: Collector, index: number) => {
-                  // Normalize coordinates to fit inside [10-90]% boundaries in the SVG view
-                  let x = 20 + ((col.longitude + 1) * 35);
-                  let y = 30 + ((col.latitude - 5) * 45);
-                  if (isNaN(x) || x < 5 || x > 95) x = 20 + (index * 25);
-                  if (isNaN(y) || y < 5 || y > 95) y = 40 + (index * 15);
-                  
-                  return (
-                    <div 
-                      key={col.id} 
-                      className={`pin ${col.availability}`} 
-                      style={{ left: `${x}%`, top: `${y}%` }}
-                      onClick={() => setSelectedCollector(col)}
-                    >
-                      <div className="pin-marker"></div>
-                      <span className="pin-label">{col.name} ({col.vehicleType})</span>
-                    </div>
-                  );
-                })}
+            {loading ? (
+              <div className="map-container animate-pulse" style={{ display: "grid", placeItems: "center" }}>
+                <span style={{ color: "var(--text-muted)", fontSize: 13 }}>Loading tracking telemetry...</span>
               </div>
-            </div>
+            ) : (
+              <div className="map-container">
+                {/* Grid overlay lines */}
+                <svg className="map-svg" viewBox="0 0 100 100">
+                  <line x1="10" y1="0" x2="10" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="30" y1="0" x2="30" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="50" y1="0" x2="50" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="70" y1="0" x2="70" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="90" y1="0" x2="90" y2="100" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="0" y1="40" x2="100" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="0" y1="60" x2="100" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  <line x1="0" y1="80" x2="100" y2="80" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+                  
+                  {/* Ghana Coast outline representation */}
+                  {countryId === "country-gh" && (
+                    <path d="M 5,95 Q 40,80 60,65 T 95,50" fill="none" stroke="rgba(16, 185, 129, 0.15)" strokeWidth="2" strokeDasharray="4,4" />
+                  )}
+                  {/* Nigeria representation */}
+                  {countryId === "country-ng" && (
+                    <path d="M 10,10 Q 50,40 90,10 M 10,90 Q 50,60 90,90" fill="none" stroke="rgba(99, 102, 241, 0.15)" strokeWidth="2" />
+                  )}
+                </svg>
+
+                <div className="map-pins">
+                  {dashboard.collectorMap && dashboard.collectorMap.map((col: Collector, index: number) => {
+                    // Normalize coordinates to fit inside [10-90]% boundaries in the SVG view
+                    let x = 20 + ((col.longitude + 1) * 35);
+                    let y = 30 + ((col.latitude - 5) * 45);
+                    if (isNaN(x) || x < 5 || x > 95) x = 20 + (index * 25);
+                    if (isNaN(y) || y < 5 || y > 95) y = 40 + (index * 15);
+                    
+                    return (
+                      <div 
+                        key={col.id} 
+                        className={`pin ${col.availability}`} 
+                        style={{ left: `${x}%`, top: `${y}%` }}
+                        onClick={() => setSelectedCollector(col)}
+                      >
+                        <div className="pin-marker"></div>
+                        <span className="pin-label">{col.name} ({col.vehicleType})</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Quick list below map */}
             <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-              {dashboard.collectorMap && dashboard.collectorMap.slice(0, 3).map((col: Collector) => (
-                <div key={col.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 12, fontSize: 13 }}>
-                  <span><b>{col.name}</b> · <span style={{ opacity: 0.7 }}>{col.vehicleType}</span></span>
-                  <span style={{ display: "flex", gap: 6 }}>
-                    <StatusBadge value={col.availability} />
-                    <StatusBadge value={col.status} />
-                  </span>
-                </div>
-              ))}
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 12, height: 38 }}>
+                    <div className="skeleton-bar animate-pulse" style={{ width: "50%", height: 12 }} />
+                    <div className="skeleton-bar animate-pulse" style={{ width: "30%", height: 12 }} />
+                  </div>
+                ))
+              ) : (
+                dashboard.collectorMap && dashboard.collectorMap.slice(0, 3).map((col: Collector) => (
+                  <div key={col.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 12, fontSize: 13 }}>
+                    <span><b>{col.name}</b> · <span style={{ opacity: 0.7 }}>{col.vehicleType}</span></span>
+                    <span style={{ display: "flex", gap: 6 }}>
+                      <StatusBadge value={col.availability} />
+                      <StatusBadge value={col.status} />
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

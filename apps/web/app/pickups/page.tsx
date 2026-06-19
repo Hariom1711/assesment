@@ -18,8 +18,8 @@ import {
   CheckCircle,
   DollarSign
 } from "lucide-react";
-import { Shell, Topbar } from "../../src/components/Shell";
-import { StatusBadge } from "../../src/components/Ui";
+import { Shell, Topbar, toast } from "../../src/components/Shell";
+import { StatusBadge, SkeletonTable } from "../../src/components/Ui";
 import { getPickups, getCollectors, apiBase } from "../../src/lib/api";
 import type { Pickup, Collector } from "@waste/shared";
 
@@ -91,9 +91,12 @@ export default function PickupsPage() {
         setSelectedPickup(null);
         setQuoteAmount("");
         setRefreshKey(prev => prev + 1);
+        toast.success(`Special pickup quote successfully set to ${activeCountry.currency} ${quoteAmount}!`);
+      } else {
+        toast.error("Failed to submit quote.");
       }
-    } catch (err) {
-      alert("Failed to submit quote.");
+    } catch (err: any) {
+      toast.error(`Quote submission failed: ${err.message || err}`);
     } finally {
       setSubmitting(false);
     }
@@ -113,9 +116,12 @@ export default function PickupsPage() {
         setSelectedPickup(null);
         setAssigneeId("");
         setRefreshKey(prev => prev + 1);
+        toast.success("Collector assigned successfully!");
+      } else {
+        toast.error("Failed to assign collector.");
       }
-    } catch (err) {
-      alert("Failed to assign collector.");
+    } catch (err: any) {
+      toast.error(`Assignment failed: ${err.message || err}`);
     } finally {
       setSubmitting(false);
     }
@@ -142,9 +148,12 @@ export default function PickupsPage() {
         setSpecialAddress("");
         setIsSpecialModalOpen(false);
         setRefreshKey(prev => prev + 1);
+        toast.success("Special bulk pickup booking request created successfully!");
+      } else {
+        toast.error("Failed to create special bulk pickup booking.");
       }
-    } catch (err) {
-      alert("Failed to create special pickup booking.");
+    } catch (err: any) {
+      toast.error(`Special booking failed: ${err.message || err}`);
     } finally {
       setSubmitting(false);
     }
@@ -201,66 +210,70 @@ export default function PickupsPage() {
       {/* Pickups Table */}
       <div className="card">
         <h2>Waste Collection Queue ({activeTab === "sack" ? "Official Sacks Only" : "Bulk Pricing Model"})</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Pickup ID</th>
-                <th>Window</th>
-                <th>Address</th>
-                <th>{activeTab === "sack" ? "Sack Quantity" : "Bulk Description"}</th>
-                <th>Assigned Hauler</th>
-                <th>Status</th>
-                <th>Proof Photos</th>
-                <th>Cost</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPickups.length > 0 ? (
-                filteredPickups.map((p) => (
-                  <tr key={p.id}>
-                    <td><b>{p.id}</b></td>
-                    <td><span style={{ textTransform: "capitalize" }}>{p.pickupWindow}</span></td>
-                    <td>{p.address}</td>
-                    <td style={{ fontWeight: 600, color: "var(--primary)" }}>{p.sackSummary}</td>
-                    <td>
-                      {p.collectorId ? (
-                        collectors.find(c => c.id === p.collectorId)?.name ?? p.collectorId
-                      ) : (
-                        <span style={{ fontStyle: "italic", opacity: 0.6 }}>Unassigned</span>
-                      )}
-                    </td>
-                    <td><StatusBadge value={p.status} /></td>
-                    <td>
-                      {p.proofPhotos.length > 0 ? (
-                        <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--primary)", fontWeight: 700, fontSize: 12 }}>
-                          <Camera size={14} /> {p.proofPhotos.length} Proofs
-                        </span>
-                      ) : (
-                        <span style={{ opacity: 0.5 }}>None</span>
-                      )}
-                    </td>
-                    <td style={{ fontWeight: 700 }}>
-                      {p.amount > 0 ? `${activeCountry.currency} ${p.amount}` : "Quoting Required"}
-                    </td>
-                    <td>
-                      <button className="btn secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => setSelectedPickup(p)}>
-                        <Eye size={12} /> Manage
-                      </button>
+        {loading ? (
+          <SkeletonTable cols={9} rows={5} />
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Pickup ID</th>
+                  <th>Window</th>
+                  <th>Address</th>
+                  <th>{activeTab === "sack" ? "Sack Quantity" : "Bulk Description"}</th>
+                  <th>Assigned Hauler</th>
+                  <th>Status</th>
+                  <th>Proof Photos</th>
+                  <th>Cost</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPickups.length > 0 ? (
+                  filteredPickups.map((p) => (
+                    <tr key={p.id}>
+                      <td><b>{p.id}</b></td>
+                      <td><span style={{ textTransform: "capitalize" }}>{p.pickupWindow}</span></td>
+                      <td>{p.address}</td>
+                      <td style={{ fontWeight: 600, color: "var(--primary)" }}>{p.sackSummary}</td>
+                      <td>
+                        {p.collectorId ? (
+                          collectors.find(c => c.id === p.collectorId)?.name ?? p.collectorId
+                        ) : (
+                          <span style={{ fontStyle: "italic", opacity: 0.6 }}>Unassigned</span>
+                        )}
+                      </td>
+                      <td><StatusBadge value={p.status} /></td>
+                      <td>
+                        {p.proofPhotos.length > 0 ? (
+                          <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--primary)", fontWeight: 700, fontSize: 12 }}>
+                            <Camera size={14} /> {p.proofPhotos.length} Proofs
+                          </span>
+                        ) : (
+                          <span style={{ opacity: 0.5 }}>None</span>
+                        )}
+                      </td>
+                      <td style={{ fontWeight: 700 }}>
+                        {p.amount > 0 ? `${activeCountry.currency} ${p.amount}` : "Quoting Required"}
+                      </td>
+                      <td>
+                        <button className="btn secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => setSelectedPickup(p)}>
+                          <Eye size={12} /> Manage
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: "center", color: "var(--text-muted)", padding: 36 }}>
+                      No pickups logged under this criteria.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: "center", color: "var(--text-muted)", padding: 36 }}>
-                    No pickups logged under this criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Pickup Detail & Operations Modal */}

@@ -20,8 +20,8 @@ import {
   X,
   RefreshCw
 } from "lucide-react";
-import { Shell, Topbar } from "../../src/components/Shell";
-import { StatusBadge } from "../../src/components/Ui";
+import { Shell, Topbar, toast } from "../../src/components/Shell";
+import { StatusBadge, SkeletonTable } from "../../src/components/Ui";
 import { getPickups, getServiceBookings, getCollectors, getServiceProviders, apiBase } from "../../src/lib/api";
 import type { Pickup, ServiceBooking, Collector, ServiceProvider } from "@waste/shared";
 
@@ -153,11 +153,12 @@ export default function RequestsPage() {
         setSelectedItem(null);
         setAssigneeId("");
         setRefreshKey(prev => prev + 1);
+        toast.success("Service provider successfully assigned to work order!");
       } else {
-        alert(await response.text());
+        toast.error(`Assignment failed: ${await response.text()}`);
       }
-    } catch (err) {
-      alert("Failed to assign provider. Please try again.");
+    } catch (err: any) {
+      toast.error(`Assignment error: ${err.message || err}`);
     } finally {
       setAssigning(false);
     }
@@ -231,72 +232,76 @@ export default function RequestsPage() {
       {/* Main Request Queue */}
       <div className="card">
         <h2>Unified Requests Feed</h2>
-        <div style={{ overflowX: "auto" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Job ID</th>
-                <th>Category</th>
-                <th>Channel</th>
-                <th>Address</th>
-                <th>Details</th>
-                <th>Assigned To</th>
-                <th>Status</th>
-                <th>Fare</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.length > 0 ? (
-                filteredRows.map((row) => (
-                  <tr key={row.id}>
-                    <td><b>{row.id}</b></td>
-                    <td>
-                      <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
-                        {row.rawType === "waste" ? (
-                          <Trash size={14} style={{ color: "var(--primary)" }} />
-                        ) : row.rawType === "home_cleaning" ? (
-                          <Sparkles size={14} style={{ color: "var(--accent)" }} />
-                        ) : (
-                          <Bug size={14} style={{ color: "var(--warning)" }} />
-                        )}
-                        {row.service}
-                      </span>
-                    </td>
-                    <td>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, opacity: 0.8 }}>
-                        {row.source === "sms" ? <MessageSquare size={12} /> : <Smartphone size={12} />}
-                        {row.source.toUpperCase()}
-                      </span>
-                    </td>
-                    <td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {row.address}
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: 13 }}>
-                      {row.detailValue}
-                    </td>
-                    <td style={{ fontStyle: row.providerId ? "normal" : "italic", fontWeight: row.providerId ? 600 : 400 }}>
-                      {getAssignedName(row)}
-                    </td>
-                    <td><StatusBadge value={row.status} /></td>
-                    <td style={{ fontWeight: 700 }}>{getCurrencySymbol()} {row.amount}</td>
-                    <td>
-                      <button className="btn secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => setSelectedItem(row)}>
-                        <Eye size={12} /> Dispatch
-                      </button>
+        {loading ? (
+          <SkeletonTable cols={9} rows={6} />
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Job ID</th>
+                  <th>Category</th>
+                  <th>Channel</th>
+                  <th>Address</th>
+                  <th>Details</th>
+                  <th>Assigned To</th>
+                  <th>Status</th>
+                  <th>Fare</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.length > 0 ? (
+                  filteredRows.map((row) => (
+                    <tr key={row.id}>
+                      <td><b>{row.id}</b></td>
+                      <td>
+                        <span style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700 }}>
+                          {row.rawType === "waste" ? (
+                            <Trash size={14} style={{ color: "var(--primary)" }} />
+                          ) : row.rawType === "home_cleaning" ? (
+                            <Sparkles size={14} style={{ color: "var(--accent)" }} />
+                          ) : (
+                            <Bug size={14} style={{ color: "var(--warning)" }} />
+                          )}
+                          {row.service}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700, opacity: 0.8 }}>
+                          {row.source === "sms" ? <MessageSquare size={12} /> : <Smartphone size={12} />}
+                          {row.source.toUpperCase()}
+                        </span>
+                      </td>
+                      <td style={{ maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {row.address}
+                      </td>
+                      <td style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                        {row.detailValue}
+                      </td>
+                      <td style={{ fontStyle: row.providerId ? "normal" : "italic", fontWeight: row.providerId ? 600 : 400 }}>
+                        {getAssignedName(row)}
+                      </td>
+                      <td><StatusBadge value={row.status} /></td>
+                      <td style={{ fontWeight: 700 }}>{getCurrencySymbol()} {row.amount}</td>
+                      <td>
+                        <button className="btn secondary" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => setSelectedItem(row)}>
+                          <Eye size={12} /> Dispatch
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: "center", color: "var(--text-muted)", padding: 36 }}>
+                      No service requests match the filters.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={9} style={{ textAlign: "center", color: "var(--text-muted)", padding: 36 }}>
-                    No service requests match the filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Drawer overlay for dispatch/assignment details */}
