@@ -15,7 +15,6 @@
     "test": "npm --workspaces --if-present run test"
   },
   "dependencies": {
-    "@next/swc-win32-x64-msvc": "^16.2.9",
     "pptxgenjs": "^4.0.1",
     "waste-marketplace-platform": "file:C:/Users/omhar/Downloads/waste-main/waste-main"
   }
