@@ -6,7 +6,8 @@ export interface DashboardData {
   collectorMap: Collector[];
 }
 
-export const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+const rawApiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
+export const apiBase = rawApiBase.endsWith("/") ? rawApiBase.slice(0, -1) : rawApiBase;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
