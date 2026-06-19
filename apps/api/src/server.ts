@@ -11,8 +11,6 @@ let db = loadDatabase();
 
 app.use(cors({
   origin: true,
-  methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "x-role"],
   credentials: true
 }));
 app.options("*", cors() as any);
