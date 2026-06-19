@@ -7,7 +7,11 @@ export interface DashboardData {
 }
 
 const rawApiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api/v1";
-export const apiBase = rawApiBase.endsWith("/") ? rawApiBase.slice(0, -1) : rawApiBase;
+let sanitizedBase = rawApiBase.endsWith("/") ? rawApiBase.slice(0, -1) : rawApiBase;
+if (!sanitizedBase.endsWith("/api/v1")) {
+  sanitizedBase = `${sanitizedBase}/api/v1`;
+}
+export const apiBase = sanitizedBase;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
