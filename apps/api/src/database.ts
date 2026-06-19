@@ -108,7 +108,20 @@ export function createSeedDatabase(): WasteDatabase {
 
 export function loadDatabase(): WasteDatabase {
   if (!existsSync(dataPath)) return createSeedDatabase();
-  return JSON.parse(readFileSync(dataPath, "utf8")) as WasteDatabase;
+  try {
+    const db = JSON.parse(readFileSync(dataPath, "utf8")) as WasteDatabase;
+    if (!db.users || db.users.length === 0) {
+      const seed = createSeedDatabase();
+      db.users = seed.users;
+      saveDatabase(db);
+    }
+    return db;
+  } catch (error) {
+    console.error("Database parsing failed, reverting to seeds:", error);
+    const seed = createSeedDatabase();
+    saveDatabase(seed);
+    return seed;
+  }
 }
 
 export function saveDatabase(db: WasteDatabase) {
