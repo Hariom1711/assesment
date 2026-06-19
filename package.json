@@ -1,0 +1,21 @@
+{
+  "name": "waste-marketplace-platform",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "echo 'Run npm run dev:web and npm run dev:api in separate terminals'",
+    "dev:web": "npm --workspace apps/web run dev",
+    "dev:api": "npm --workspace apps/api run dev",
+    "build": "npm --workspaces --if-present run build",
+    "lint": "npm --workspaces --if-present run lint",
+    "test": "npm --workspaces --if-present run test"
+  },
+  "dependencies": {
+    "pptxgenjs": "^4.0.1",
+    "waste-marketplace-platform": "file:C:/Users/omhar/Downloads/waste-main/waste-main"
+  }
+}
